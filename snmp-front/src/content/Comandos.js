@@ -3,7 +3,7 @@ import React from 'react';
 import { Breadcrumb, Row, Col, List, Button, Timeline, Icon, Tag, Card, Input } from 'antd';
 import Moment from 'react-moment';
 
-import ApiHelper from '../ApiHelper'; 
+import ApiHelper from '../ApiHelper';
 
 const Search = Input.Search;
 
@@ -17,7 +17,11 @@ class Comandos extends React.Component {
         date: new Date()
     }
 
-  
+
+    componentWillReceiveProps = (props) => {
+        this.setState({ ip: props.match.params.ip })
+    }
+
     componentDidMount = () => {
         console.log("Api url: ", ApiHelper.getApiUrl());
 

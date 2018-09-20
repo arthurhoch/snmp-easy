@@ -33,14 +33,27 @@ class Comandos extends React.Component {
         name: ''
     }
 
-    memoriaTimer;
-    cpuTimer;
-    uptimeTimer;
+    memoriaTimer = undefined;
+    cpuTimer = undefined;
+    uptimeTimer = undefined;
 
     componentWillUnmount = () => {
         clearInterval(this.memoriaTimer);
         clearInterval(this.cpuTimer);
         clearInterval(this.uptimeTimer);
+    }
+
+    componentWillReceiveProps = (props) => {
+        this.setState({ ip: props.match.params.ip })
+
+        // this.uptime();
+        // this.memoria();
+        // this.cpu();
+
+        setTimeout(() => {
+            this.disk();
+            this.name();
+        }, 2000);
     }
 
     formatUptime = (i) => {
@@ -123,6 +136,24 @@ class Comandos extends React.Component {
 
     }
 
+    uptimeUpdate = () => {
+        fetch(ApiHelper.getApiUrl() + '/oids/' + this.state.ip + "/1.3.6.1.2.1.1.3.0")
+            .then(response => response.json())
+            .then(result => {
+                const uptime = this.formatUptime(result[0].value);
+                this.setState({ uptime: uptime })
+                this.uptimeTimer = setTimeout(() => {
+                    this.uptimeUpdate();
+                }, 1000);
+            })
+            .catch((err) => {
+                console.log(err);
+                this.uptimeTimer = setTimeout(() => {
+                    this.uptimeUpdate();
+                }, 1000);
+            });
+    }
+
     uptime = () => {
         fetch(ApiHelper.getApiUrl() + '/oids/' + this.state.ip + "/1.3.6.1.2.1.1.3.0")
             .then(response => response.json())
@@ -135,19 +166,27 @@ class Comandos extends React.Component {
                 console.log(err);
             });
 
+        this.uptimeUpdate();
+    }
 
-        this.uptimeTimer = setInterval(() => {
-            fetch(ApiHelper.getApiUrl() + '/oids/' + this.state.ip + "/1.3.6.1.2.1.1.3.0")
-                .then(response => response.json())
-                .then(result => {
-                    const uptime = this.formatUptime(result[0].value);
-                    this.setState({ uptime: uptime })
-                })
-                .catch((err) => {
-                    console.log(err);
-                });
-        }, 100);
-
+    memoriaUpdate = () => {
+        fetch(ApiHelper.getApiUrl() + '/oids/' + this.state.ip + "/1.3.6.1.4.1.2021.4.6.0")
+            .then(response => response.json())
+            .then(result => {
+                const insert = {
+                    x: this.state.memoria.length, y: (result[0].value / 1024)
+                }
+                this.setState({ memoria: [...this.state.memoria, insert] })
+                this.memoriaTimer = setTimeout(() => {
+                    this.memoriaUpdate();
+                }, 1000);
+            })
+            .catch((err) => {
+                console.log(err);
+                this.memoriaTimer = setTimeout(() => {
+                    this.memoriaUpdate();
+                }, 1000);
+            });
     }
 
     memoria = () => {
@@ -162,23 +201,29 @@ class Comandos extends React.Component {
             .catch((err) => {
                 console.log(err);
             });
+        if (this.memoriaTimer === undefined) {
+            this.memoriaUpdate();
+        }
+    }
 
-
-        this.memoriaTimer = setInterval(() => {
-            fetch(ApiHelper.getApiUrl() + '/oids/' + this.state.ip + "/1.3.6.1.4.1.2021.4.6.0")
-                .then(response => response.json())
-                .then(result => {
-                    const insert = {
-                        x: this.state.memoria.length, y: (result[0].value / 1024)
-                    }
-                    this.setState({ memoria: [...this.state.memoria, insert] })
-                })
-                .catch((err) => {
-                    console.log(err);
-                });
-        }, 1000);
-
-
+    cpuUpdate = () => {
+        fetch(ApiHelper.getApiUrl() + '/oids/' + this.state.ip + "/1.3.6.1.4.1.2021.11.10.0")
+            .then(response => response.json())
+            .then(result => {
+                const insert = {
+                    x: this.state.cpu.length + 1, y: result[0].value
+                }
+                this.setState({ cpu: [...this.state.cpu, insert] })
+                this.cpuTimer = setTimeout(() => {
+                    this.cpuUpdate();
+                }, 1000);
+            })
+            .catch((err) => {
+                console.log(err);
+                this.cpuTimer = setTimeout(() => {
+                    this.cpuUpdate();
+                }, 1000);
+            });
 
     }
 
@@ -187,20 +232,8 @@ class Comandos extends React.Component {
             x: this.state.cpu.length + 1, y: 100
         }
         this.setState({ cpu: [...this.state.cpu, insert] })
+        this.cpuUpdate();
 
-        this.cpuTimer = setInterval(() => {
-            fetch(ApiHelper.getApiUrl() + '/oids/' + this.state.ip + "/1.3.6.1.4.1.2021.11.10.0")
-                .then(response => response.json())
-                .then(result => {
-                    const insert = {
-                        x: this.state.cpu.length + 1, y: result[0].value
-                    }
-                    this.setState({ cpu: [...this.state.cpu, insert] })
-                })
-                .catch((err) => {
-                    console.log(err);
-                });
-        }, 1000);
     }
 
 
